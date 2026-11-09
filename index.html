@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>西STリスト（関西・11月～）</title>
+<style>
+:root{ --bg:#f6f7f9; --card:#fff; --line:#dde1e7; --txt:#1c2330; --sub:#5b6577; --accent:#2563eb; --zaiko:#0e7a3d; --neta:#b45309; --danger:#b91c1c;}
+*{ box-sizing:border-box;}
+body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; background:var(--bg); color:var(--txt);}
+header{ position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--line); padding:10px 14px 8px;}
+h1{ font-size:17px; margin:0 0 2px;}
+.meta{ font-size:12px; color:var(--sub);}
+.counts{ display:flex; gap:14px; align-items:baseline; margin-top:6px;}
+.remain{ font-size:15px;}.remain b{ font-size:24px; color:var(--accent);}
+.counts.small{ font-size:12px; color:var(--sub);}
+.filters{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
+.filters select,.filters input{ font-size:16px; padding:8px; border:1px solid var(--line); border-radius:8px; background:#fff;}
+.filters input{ flex:1; min-width:140px;}
+main{ padding:10px 12px 40px; max-width:860px; margin:0 auto;}
+.group-title{ font-size:14px; font-weight:700; margin:16px 2px 8px;}
+.card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:10px;}
+.row1{ display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.name{ font-size:17px; font-weight:700;}
+.badge{ font-size:11px; font-weight:700; color:#fff; border-radius:999px; padding:2px 8px;}
+.badge.zaiko{ background:var(--zaiko);}.badge.neta{ background:var(--neta);}
+.no{ font-size:12px; color:var(--sub);}
+.line{ font-size:13px; margin-top:3px;}
+.line.k{ color:var(--sub);}
+.tel{ font-size:15px; font-weight:700; color:var(--accent); text-decoration:none;}
+.actions{ margin-top:8px; display:flex; gap:8px;}
+button.done-btn{ flex:1; font-size:15px; font-weight:700; padding:10px; border:0; border-radius:9px; background:var(--accent); color:#fff; cursor:pointer;}
+button.done-btn:disabled{ opacity:.5;}
+button.undo-btn{ font-size:13px; padding:8px 14px; border:1px solid var(--line); border-radius:9px; background:#fff; cursor:pointer;}
+.done-card{ opacity:.75;}
+.done-at{ font-size:12px; color:var(--sub);}
+#errBar{ display:none; background:#fef2f2; color:var(--danger); border:1px solid #fecaca; border-radius:9px; padding:9px 12px; font-size:13px; margin-bottom:10px;}
+#syncNote{ font-size:11px; color:var(--sub); margin-top:4px;}
+details.done-sec{ margin-top:22px;}
+details.done-sec summary{ font-size:14px; font-weight:700; cursor:pointer; padding:6px 2px;}
+.empty{ text-align:center; color:var(--sub); padding:26px 0; font-size:14px;}
+footer{ font-size:11px; color:var(--sub); padding:0 14px 26px; max-width:860px; margin:0 auto;}
+a{ color:var(--accent);}
+</style>
+</head>
+<body>
+<header>
+<h1>西STリスト（関西・11月～）</h1>
+<div class="meta">元シート「」西STタブから抽出（2026/11/9時点）｜ステータス：在庫・ネタ｜就業開始時期：11月・12月・1月｜関西（2府4県）のみ</div>
+<div class="counts">
+<span class="remain">残り <b id="remainCount">…</b> 件</span>
+<span class="small">全 <span id="totalCount">…</span> 件 ／ 設定済み <span id="doneCount">…</span> 件</span>
+</div>
+<div class="filters">
+<select id="monthFilter" aria-label="入社時期で絞り込み">
+<option value="">入社時期：すべて</option>
+<option value="11">11月</option>
+<option value="12">12月</option>
+<option value="1">1月</option>
+</select>
+<select id="statusFilter" aria-label="ステータスで絞り込み">
+<option value="">ステータス：すべて</option>
+<option value="在庫">在庫</option>
+<option value="ネタ">ネタ</option>
+</select>
+<input id="searchBox" type="search" placeholder="名前・地域・資格で検索">
+</div>
+<div id="syncNote">読み込み中…</div>
+</header>
+<main>
+<div id="errBar"></div>
+<div id="list"></div>
+<details class="done-sec" id="doneSec">
+<summary>設定済み（<span id="doneCount2">0</span>件）― 戻す場合はこちら</summary>
+<div id="doneList" style="margin-top:10px;"></div>
+</details>
+</main>
+<footer>
+・「設定済みにする」を押すと全員の画面から外れます（裏側のシートに記録されるので、誰が開いても同じ状態です）。間違えたら下の「設定済み」から戻せます。<br>
+・このリストは2026/11/9 11:50時点の抽出です。元のシートが更新されても自動では反映されません。<br>
+・元シート：<a href="https://docs.google.com/spreadsheets/d/1li29rY3CFPw1ZRU4xR56N8-eqeE3EH57AKsbtPe3Yow/edit?gid=524407368#gid=524407368" target="_blank" rel="noopener">西STタブ</a>
+</footer>
+<script>
+"use strict";
+const API_URL = "https://script.google.com/macros/s/AKfycbxLDOzshpk78xBdPol6G9KzIqX9JDLcPBGSsq6fc4BNeA-sjyWvzWALV8Gm-R9lEh5n/exec";
+let items = [];
+let pending = {}; // id -> true while a write is in flight
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null? "": s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const monthOrder = (m) => (m === 11? 0: m === 12? 1: m === 1? 2: 3);
+const monthLabel = (m) => (m === 11? "11月": m === 12? "12月": m === 1? "1月": "時期その他");
+
+async function fetchState() {
+const res = await fetch(API_URL + "?action=state", { cache: "no-store"});
+const data = await res.json();
+if (!data || data.ok!== true ||!Array.isArray(data.items)) throw new Error("bad_state");
+items = data.items.slice().sort((a, b) => (monthOrder(a.month) - monthOrder(b.month)) || (Number(a.no) - Number(b.no)));
+$("syncNote").textContent = "最終同期: " + new Date().toLocaleTimeString("ja-JP");
+hideErr();
+render();
+}
+
+function showErr(msg) { const b = $("errBar"); b.textContent = msg; b.style.display = "block";}
+function hideErr() { $("errBar").style.display = "none";}
+
+async function setDone(id, done) {
+if (pending[id]) return;
+pending[id] = true;
+// optimistic update
+const it = items.find((x) => x.id === id);
+const prev = it? it.done: null;
+if (it) { it.done = done; render();}
+try {
+await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain"}, body: JSON.stringify({ action: "setDone", id: id, done: done})});
+// POST応答はリダイレクトで読めないことがあるため、stateを読み戻して着地確認する
+await fetchState();
+const now = items.find((x) => x.id === id);
+if (!now || now.done!== done) throw new Error("not_landed");
+} catch (e) {
+if (it && prev!== null) it.done = prev;
+showErr("保存できませんでした。通信を確認して、もう一度試してください。");
+render();
+fetchState().catch(() => {});
+} finally {
+delete pending[id];
+}
+}
+
+function matches(it) {
+const mf = $("monthFilter").value;
+if (mf && String(it.month)!== mf) return false;
+const sf = $("statusFilter").value;
+if (sf && it.status!== sf) return false;
+const q = $("searchBox").value.trim();
+if (q) {
+const hay = [it.name, it.pref, it.city, it.area, it.qual, it.staff, it.facility].join(" ");
+if (!hay.includes(q)) return false;
+}
+return true;
+}
+
+function cardHtml(it, isDone) {
+const badgeCls = it.status === "在庫"? "zaiko": "neta";
+const loc = [it.pref, it.city, it.area].filter(Boolean).join(" ");
+const prof = [it.gender, it.age? it.age + "歳": "", it.qual, it.exp? "経験 " + it.exp: ""].filter(Boolean).join("｜");
+const wish = [it.pay, it.form].filter(Boolean).join("｜");
+const sub = ["担当 " + (it.staff || "—"), "アテンド " + (it.attend || "—"), "最終接触 " + (it.contact || "—"), it.company || ""].filter(Boolean).join("｜");
+let h = '<div class="card' + (isDone? " done-card": "") + '">';
+h += '<div class="row1"><span class="name">' + esc(it.name) + '</span>' +
+'<span class="badge ' + badgeCls + '">' + esc(it.status) + '</span>' +
+'<span class="no">通番 ' + esc(it.no) + (it.type? "｜" + esc(it.type): "") + '</span></div>';
+if (prof) h += '<div class="line">' + esc(prof) + '</div>';
+if (loc) h += '<div class="line"><span class="k">地域：</span>' + esc(loc) + '</div>';
+h += '<div class="line"><span class="k">就業開始時期：</span><b>' + esc(it.start || "—") + '</b>' + (wish? '　<span class="k">希望：</span>' + esc(wish): '') + '</div>';
+if (it.facility) h += '<div class="line"><span class="k">提案施設：</span>' + esc(it.facility) + '</div>';
+if (it.phone) h += '<div class="line">☎ <a class="tel" href="tel:' + esc(it.phone.replace(/[^0-9+]/g, "")) + '">' + esc(it.phone) + '</a></div>';
+h += '<div class="line" style="color:var(--sub); font-size:12px;">' + esc(sub) + '</div>';
+if (isDone) {
+h += '<div class="done-at">設定日時: ' + esc(it.doneAt? new Date(it.doneAt).toLocaleString("ja-JP"): "—") + '</div>';
+h += '<div class="actions"><button class="undo-btn" data-undo="' + esc(it.id) + '">未設定に戻す</button></div>';
+} else {
+h += '<div class="actions"><button class="done-btn" data-done="' + esc(it.id) + '"' + (pending[it.id]? " disabled": "") + '>設定済みにする</button></div>';
+}
+h += '</div>';
+return h;
+}
+
+function render() {
+const open = items.filter((x) =>!x.done);
+const done = items.filter((x) => x.done);
+$("remainCount").textContent = open.length;
+$("totalCount").textContent = items.length;
+$("doneCount").textContent = done.length;
+$("doneCount2").textContent = done.length;
+
+const visible = open.filter(matches);
+let h = "";
+let curMonth = null;
+if (!visible.length) h = '<div class="empty">条件に合う未設定の候補者はいません。</div>';
+for (const it of visible) {
+if (it.month!== curMonth) { curMonth = it.month; h += '<div class="group-title">' + monthLabel(it.month) + '（' + visible.filter((v) => v.month === curMonth).length + '件）</div>';}
+h += cardHtml(it, false);
+}
+$("list").innerHTML = h;
+
+$("doneList").innerHTML = done.length? done.map((it) => cardHtml(it, true)).join(""): '<div class="empty">設定済みはまだありません。</div>';
+
+document.querySelectorAll("[data-done]").forEach((b) => b.addEventListener("click", () => setDone(b.getAttribute("data-done"), true)));
+document.querySelectorAll("[data-undo]").forEach((b) => b.addEventListener("click", () => setDone(b.getAttribute("data-undo"), false)));
+}
+
+$("monthFilter").addEventListener("change", render);
+$("statusFilter").addEventListener("change", render);
+$("searchBox").addEventListener("input", render);
+
+fetchState().catch(() => { showErr("読み込みに失敗しました。通信を確認してページを再読み込みしてください。"); $("syncNote").textContent = "同期できていません";});
+setInterval(() => { if (!document.hidden) fetchState().catch(() => {});}, 20000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) fetchState().catch(() => {});});
+</script>
+</body>
+</html>
